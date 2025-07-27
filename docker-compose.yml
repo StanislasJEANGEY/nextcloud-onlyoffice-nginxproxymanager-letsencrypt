@@ -1,0 +1,184 @@
+networks:
+    nextcloud:
+        driver: bridge
+    onlyoffice:
+        driver: bridge
+    reverse_proxy:
+        driver: bridge
+
+services:
+  nextcloud:
+    image: lscr.io/linuxserver/nextcloud:latest
+    restart: unless-stopped
+    # ports:
+    #     - 450:443
+    volumes:
+      - ./nextcloud/data:/data 
+      - ./nextcloud/config:/config
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: ${TZ}
+    depends_on:
+      postgres-nextcloud:
+        condition: service_healthy
+      redis-nextcloud:
+        condition: service_healthy
+      onlyoffice:
+        condition: service_healthy
+      npm:
+        condition: service_healthy
+    networks:
+      - nextcloud
+      - reverse_proxy
+    healthcheck:
+      test: curl -sSf 'https://nextcloud.${DOMAINE}/status.php' | grep '"installed":true' | grep '"maintenance":false' | grep '"needsDbUpgrade":false'
+      interval: 10s
+      timeout: 5s
+      retries: 3
+ 
+  redis-nextcloud:
+    image: redis:latest
+    command: ["redis-server", "--requirepass", "${NEXTCLOUD_REDIS_PASSWORD}"]
+    volumes:
+      - ./redis-nextcloud:/data
+    networks:
+      - nextcloud
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    
+  postgres-nextcloud:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - ./postgres-nextcloud:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${NEXTCLOUD_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NEXTCLOUD_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${NEXTCLOUD_POSTGRES_DB}
+    networks:
+      - nextcloud
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "${NEXTCLOUD_POSTGRES_DB}", "-U", "${NEXTCLOUD_POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+# ------------------------------------------------------------------------------------------------------------------
+
+  redis-onlyoffice:
+    image: redis:latest
+    volumes:
+      - ./redis-onlyoffice:/data
+    networks:
+      - onlyoffice
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    
+  postgres-onlyoffice:
+    image: postgres:16
+    volumes:
+      - ./postgres-onlyoffice:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${ONLYOFFICE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${ONLYOFFICE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ONLYOFFICE_POSTGRES_DB}
+    networks:
+      - onlyoffice
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ONLYOFFICE_POSTGRES_USER} -d ${ONLYOFFICE_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  rabbitmq-onlyoffice:
+    image: rabbitmq:4.0-management
+    volumes:
+      - ./rabbitmq-onlyoffice:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      - onlyoffice
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    volumes:
+      - ./onlyoffice/data:/var/www/onlyoffice/Data
+      - ./onlyoffice/logs:/var/log/onlyoffice 
+      - ./onlyoffice/cache:/var/lib/onlyoffice
+      - ./onlyoffice/fonts:/usr/share/fonts
+    # ports:
+    #   - 460:80
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: postgres-onlyoffice
+      DB_PORT: 5432
+      DB_NAME: ${ONLYOFFICE_POSTGRES_DB}
+      DB_USER: ${ONLYOFFICE_POSTGRES_USER}
+      DB_PWD: ${ONLYOFFICE_POSTGRES_PASSWORD}
+      AMQP_TYPE: rabbitmq
+      AMQP_URI: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq-onlyoffice"
+      REDIS_SERVER_HOST: redis-onlyoffice
+      REDIS_SERVER_PORT: 6379
+      JWT_ENABLED: true
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_HEADER: Authorization
+    networks:
+      - onlyoffice
+      - reverse_proxy
+    restart: unless-stopped
+    healthcheck:
+        test: curl -sSf 'https://onlyoffice.${DOMAINE}/healthcheck' | grep 'true'
+        interval: 10s
+        timeout: 5s
+        retries: 3
+    depends_on:
+      postgres-onlyoffice:
+        condition: service_healthy
+      rabbitmq-onlyoffice:
+        condition: service_healthy
+      redis-onlyoffice:
+        condition: service_healthy
+      npm:
+        condition: service_healthy
+
+
+# ------------------------------------------------------------------------------------------------------------------
+
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: npm
+    restart: unless-stopped
+    ports:
+      # These ports are in format <host-port>:<container-port>
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+      # Add any other Stream port you want to expose
+      # - '21:21' # FTP
+    volumes:
+      - ./npm/data:/data 
+      - ./npm/letsencrypt:/etc/letsencrypt 
+    networks:
+      - reverse_proxy
+    healthcheck:
+      test: ["CMD", "/usr/bin/check-health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
