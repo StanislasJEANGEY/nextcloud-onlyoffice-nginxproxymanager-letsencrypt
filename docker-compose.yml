@@ -9,6 +9,7 @@ networks:
 services:
   nextcloud:
     image: lscr.io/linuxserver/nextcloud:latest
+    container_name: nextcloud
     restart: unless-stopped
     # ports:
     #     - 450:443
@@ -39,6 +40,7 @@ services:
  
   redis-nextcloud:
     image: redis:latest
+    container_name: redis-nextcloud
     command: ["redis-server", "--requirepass", "${NEXTCLOUD_REDIS_PASSWORD}"]
     volumes:
       - ./redis-nextcloud:/data
@@ -53,6 +55,7 @@ services:
     
   postgres-nextcloud:
     image: postgres:16
+    container_name: postgres-nextcloud
     restart: unless-stopped
     volumes:
       - ./postgres-nextcloud:/var/lib/postgresql/data
@@ -72,6 +75,7 @@ services:
 
   redis-onlyoffice:
     image: redis:latest
+    container_name: redis-onlyoffice
     volumes:
       - ./redis-onlyoffice:/data
     networks:
@@ -85,6 +89,7 @@ services:
     
   postgres-onlyoffice:
     image: postgres:16
+    container_name: postgres-onlyoffice
     volumes:
       - ./postgres-onlyoffice:/var/lib/postgresql/data
     environment:
@@ -102,6 +107,7 @@ services:
 
   rabbitmq-onlyoffice:
     image: rabbitmq:4.0-management
+    container_name: rabbitmq-onlyoffice
     volumes:
       - ./rabbitmq-onlyoffice:/var/lib/rabbitmq
     environment:
@@ -118,6 +124,7 @@ services:
 
   onlyoffice:
     image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
     volumes:
       - ./onlyoffice/data:/var/www/onlyoffice/Data
       - ./onlyoffice/logs:/var/log/onlyoffice 
