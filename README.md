@@ -156,6 +156,10 @@ Cette stack nextcloud complète comprend les services suivants :
     - Remplacez `<password>` par le mot de passe défini dans le fichier `.env` pour `NEXTCLOUD_REDIS_PASSWORD`.
     - Remplacez `<phone_region>` par votre région téléphonique (par exemple, `FR` pour la France).
     - Sauvegardez et quittez l'éditeur.
+   >[!WARNING]
+   >Par défaut, l'adresse ipv4 du reverse proxy est défini sur 172.18.0.2.
+   >Si cette adresse n'est pas disponible, pensez à la changer dans le docker compose et dans le fichier de configuration de nextcloud > `trusted_proxies`
+   
 9. Configurer votre serveur SMTP pour Nextcloud : (optionnel mais recommandé)  
     1. Allez dans **Paramètres d'administration** > **Paramètre de base**.  
     2. Configurez les paramètres SMTP avec les informations de votre serveur de messagerie.  
