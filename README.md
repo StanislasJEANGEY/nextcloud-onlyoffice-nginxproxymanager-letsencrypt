@@ -110,7 +110,7 @@ Cette stack nextcloud complète comprend les services suivants :
         - Clé secrète JWT : Utilisez la valeur de `JWT_SECRET` définie dans le fichier `.env`.
         - Dans les paramètres avancés, assurez-vous que les options suivantes sont activées :
           - Adresse du ONLYOFFICE Docs pour les demandes internes du serveur : `https://onlyoffice.votre_domaine`
-          - Adresse du serveur pour les demandes internes du ONLYOFFICE Docs : `https://onlyoffice.votre_domaine`
+          - Adresse du serveur pour les demandes internes du ONLYOFFICE Docs : `https://nextcloud.votre_domaine`
     
         ![config onlyoffice](./pictures/config_onlyoffice.png)
 
