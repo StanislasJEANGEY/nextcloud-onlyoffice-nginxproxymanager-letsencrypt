@@ -183,7 +183,8 @@ services:
       - ./npm/data:/data 
       - ./npm/letsencrypt:/etc/letsencrypt 
     networks:
-      - reverse_proxy
+      reverse_proxy:
+          ipv4_address: 172.18.0.2
     healthcheck:
       test: ["CMD", "/usr/bin/check-health"]
       interval: 10s
