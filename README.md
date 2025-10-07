@@ -115,13 +115,8 @@ Cette stack nextcloud complète comprend les services suivants :
         ![config onlyoffice](./pictures/config_onlyoffice.png)
 
     4. Enregistrez les paramètres
-
-8. Exécuter la commande suivante sur le serveur pour connaitre l'ip du reverse proxy :
-   ```bash
-   docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' npm
-   ```
    
-9.  Rendez-vous dans le terminal de votre serveur pour modifier le fichier de configuration de Nextcloud :
+8.  Rendez-vous dans le terminal de votre serveur pour modifier le fichier de configuration de Nextcloud :
     ```bash
     nano nextcloud/config/www/nextcloud/config/config.php
     ```
@@ -131,7 +126,7 @@ Cette stack nextcloud complète comprend les services suivants :
     'default_phone_region' => '<phone_region>',
     'memcache.local' => '\\OC\\Memcache\\Redis',
     'memcache.locking' => '\\OC\\Memcache\\Redis',
-    'trusted_proxies' => ['<IP du reverse proxy>'],
+    'trusted_proxies' => ['172.18.0.2'],
     'overwrite.cli.url' => 'https://nextcloud.votre_domaine',
     'overwriteprotocol' => 'https',
     'overwritehost' => 'nextcloud.votre_domaine',
@@ -157,16 +152,15 @@ Cette stack nextcloud complète comprend les services suivants :
         'read_timeout' => 0.0,
         'password' => '<password>',
     ],
-    ```
-    - Remplacez `<IP du reverse proxy>` dans le fichier de configuration de Nextcloud par l'adresse IP obtenue.  
+    ``` 
     - Remplacez `<password>` par le mot de passe défini dans le fichier `.env` pour `NEXTCLOUD_REDIS_PASSWORD`.
     - Remplacez `<phone_region>` par votre région téléphonique (par exemple, `FR` pour la France).
     - Sauvegardez et quittez l'éditeur.
-10. Configurer votre serveur SMTP pour Nextcloud : (optionnel mais recommandé)  
+9. Configurer votre serveur SMTP pour Nextcloud : (optionnel mais recommandé)  
     1. Allez dans **Paramètres d'administration** > **Paramètre de base**.  
     2. Configurez les paramètres SMTP avec les informations de votre serveur de messagerie.  
     3. Testez la configuration en envoyant un e-mail de test.  
-11. Redémarrez les services Docker pour appliquer les modifications :
+10. Redémarrez les services Docker pour appliquer les modifications :
     ```bash
     docker compose restart
     ```
